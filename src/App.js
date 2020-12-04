@@ -25,7 +25,7 @@ const particlesOptions = {
 const initialState = {
     input: '',
     imageUrl: '',
-    box: {},
+    boxes: [],
     route: 'signIn',
     isSignIn: false,
     user: {
@@ -53,22 +53,30 @@ class App extends Component {
     }})
   }
 
+
 calculateFaceLocation = (data) => {
-    const clarifaiFace = data.outputs[0].data.regions[0].region_info.bounding_box;
+    const boundingBoxes = data.outputs[0].data.regions.map(region => {
+      return region.region_info.bounding_box
+    });
+
     const image = document.getElementById('inputImage');
     const width = Number(image.width);
     const height = Number(image.height);
-    return {
-      leftCol: clarifaiFace.left_col * width,
-      topRow: clarifaiFace.top_row * height,
-      rightCol: width - (clarifaiFace.right_col * width),
-      bottomRow: height - (clarifaiFace.bottom_row * height)
-    }
 
+    const facesLocation = boundingBoxes.map(box =>{
+      return {
+        leftCol: box.left_col * width,
+        topRow: box.top_row * height,
+        rightCol: width - (box.right_col * width),
+        bottomRow: height - (box.bottom_row * height)
+      }
+    })
+    
+    return facesLocation;
 }
 
-displayFaceBox = (box) => {
-  this.setState({box: box});
+displayFaceBoxes = (boxes) => {
+  this.setState({boxes: boxes});
 }
 
   onInputChange = (event) => {
@@ -101,22 +109,23 @@ displayFaceBox = (box) => {
           })
           .catch(console.log)
         }
-      this.displayFaceBox(this.calculateFaceLocation(response))
+      this.displayFaceBoxes(this.calculateFaceLocation(response))
     })
     .catch(err => console.log(err));
   }
 
   onRouteChange = (route) => {
+    this.setState({route: route});
+
     if (route === 'signOut') {
-      this.setState({initialState})
+      this.setState(initialState)
     } else if (route === 'home') {
       this.setState({isSignIn: true})
     }
-    this.setState({route: route});
   }
 
   render() {
-    const { isSignIn,imageUrl, route, box } = this.state;
+    const { isSignIn,imageUrl, route, boxes } = this.state;
     return (
     <div className="App">
           <Particles className='particles' 
@@ -127,8 +136,8 @@ displayFaceBox = (box) => {
           ? <div>
           <Logo />
           <Rank name={this.state.user.name} entries={this.state.user.entries}/>
-          <ImageLinkForm onInputChange={this.onInputChange} onButtonSubmit={this.onButtonSubmit}/>
-          <FaceRecognition box={box} imageUrl={imageUrl} />
+          <ImageLinkForm isDisabled={!this.state.input} onInputChange={this.onInputChange} onButtonSubmit={this.onButtonSubmit}/>
+          <FaceRecognition boxes={boxes} imageUrl={imageUrl} />
             </div>
 
           : (

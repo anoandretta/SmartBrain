@@ -5,7 +5,8 @@ class SignIn extends React.Component {
     super(props);
     this.state = {
       signInEmail: '',
-      signInPassword: ''
+      signInPassword: '',
+      error: false
     }
   }
 
@@ -27,21 +28,40 @@ class SignIn extends React.Component {
         password: this.state.signInPassword
       })
     })
-    .then(response => response.json())
+  
+    .then(response => {
+      if(!response.ok){
+        this.setState({error: true})
+      }
+      return response.json()
+    }) 
       .then(user => {
-        if(user.id){ // does the user exist? Did we receive a user with a property of id?
+        if(user.id){ 
           this.props.loadUser(user);
           this.props.onRouteChange('home');
+          this.setState({error: false});
         }
-      })    
+      })
   }
+
+
+
+
+onEnterKeySignIn = e => {
+  if (e.keyCode === 13) {
+    this.onSubmitSignIn();
+  }
+};
 
   render() {
     const { onRouteChange } = this.props;
     return(
       <article className="br3 ba b--black-10 mv4 w-100 w-50-m w-25-l mw6 shadow-5 center">
       <main className="pa4 black-80">
-      <div className="measure">
+      <div className="measure"
+           onKeyDown={this.onEnterKeySignIn}
+           onSubmit={this.onSubmitSignIn}
+      >
         <fieldset id="sign_up" className="ba b--transparent ph0 mh0">
           <legend className="f1 fw6 ph0 mh0">Sign In</legend>
           <div className="mt3">
@@ -53,8 +73,14 @@ class SignIn extends React.Component {
             <input onChange = {this.onPasswordChange} className="b pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100" type="password" name="password"  id="password" />
           </div>
         </fieldset>
+        {this.state.error && <div class="f6 lh-copy black-60 db mb2 pa1 dark-red b"> Wrong email or the password. Please try again. </div>}
         <div className="">
-          <input onClick={this.onSubmitSignIn} className="b ph3 pv2 input-reset ba b--black bg-transparent grow pointer f6 dib" type="submit" value="Sign In" />
+          <input 
+            onClick={this.onSubmitSignIn}   
+            className="b ph3 pv2 input-reset ba b--black bg-transparent pointer f6 dib" 
+            type="submit" 
+            value="Sign In" 
+          />
         </div>
         <div className="lh-copy mt3">
           <p onClick={() => onRouteChange('register')} className="f6 link dim black db pointer">Register</p>
